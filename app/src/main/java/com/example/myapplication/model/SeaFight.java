@@ -4,13 +4,23 @@ import com.example.myapplication.R;
 import com.example.myapplication.model.exception.GameOverException;
 
 import java.util.Random;
+import java.util.function.BinaryOperator;
 
 public class SeaFight {
 
-    private int[][] table;
-    private Random rand = new Random();
+    private static final int WIN_MOVE_COUNT = 3;
+    private static final int COMPUTER_WINS = 10;
+    private static final int PLAYER_WINS = -10;
+    private static final int COMPUTER_MOVE = 1;
+    private static final int PLAYER_MOVE = 0;
+    private static final int EMPTY_VALUE = 2;
+    private static final int ITS_A_TIE = 0;
 
-    private void findBestPosition(int[][] table) throws GameOverException {                        // checks every possible position and compares, writes current AI move on the board
+    private int[][] table;
+    private final Random rand = new Random();
+
+    // checks every possible position and compares, writes current AI move on the board
+    private void findBestPosition(int[][] table) throws GameOverException {
         int bestAiPositionValue = -1000;
         int bestAiPositionRow = -1;
         int bestAiPositionColum = -1;
@@ -21,8 +31,12 @@ public class SeaFight {
 
                 if (this.table[i][j] == 2) {
                     this.table[i][j] = 1;
-                    int value = minimax(table, 0, false); // recurse with next move = Player move, returns lowest possible value, for every position {highest chance for player win}
-                    if (bestAiPositionValue < value) {                    // gets the highest value of all { lowest chance for player win }
+                    // recurse with next move = Player move, returns lowest possible value,
+                    // for every position {highest chance for player win}
+                    int value = minimax(table, 0, false);
+                    // gets the highest value of all { lowest chance for player win }
+                    if (bestAiPositionValue < value) {
+
                         bestAiPositionValue = value;
                         bestAiPositionRow = i;
                         bestAiPositionColum = j;
@@ -32,52 +46,51 @@ public class SeaFight {
             }
         }
 
-        table[bestAiPositionRow][bestAiPositionColum]= 1;
+        table[bestAiPositionRow][bestAiPositionColum] = 1;
         checkIfOver();
     }    // checks every possible position and compares, writes the position with lowest player win chance as a current AI move on the board
 
     private int minimax(int[][] table, int depth, boolean isAiMove) {
-
-        int tableEvaluation = checkForWinAndReturnScore();  // checking for 3 consecutive returns 10,-10,0 {AI wins, Player wins, tie}
-        if (tableEvaluation == 10) {
+        // checking for 3 consecutive returns 10,-10,0 {AI wins, Player wins, tie}
+        int tableEvaluation = checkForWinAndReturnScore();
+        if (tableEvaluation == COMPUTER_WINS) {
             return tableEvaluation - depth;
         }
-        if (tableEvaluation == -10) {
+        if (tableEvaluation == PLAYER_WINS) {
             return tableEvaluation + depth;
         }
         if (tableIsFull()) {
-            return 0;
+            return ITS_A_TIE;
         }
-        if (isAiMove) {  //AI move, checks move and returns value - depth, in case of 2 situation with the same result, gets the closest in depth, gets the maximal value of all for AI move
-            int bestMove = -1000;
+        int bestMove;
+        int nextMove;
+        BinaryOperator<Integer> comparingFunction;
 
-            for (int i = 0; i < table.length; i++) {
+        if (isAiMove) {
+            //AI move, checks move and returns value - depth, in case of 2 situation with the same result,
+            // gets the closest in depth, gets the maximal value of all for AI move
+            bestMove = Integer.MIN_VALUE;
+            nextMove = COMPUTER_MOVE;
+            comparingFunction = this::max;
+        } else {
+            //Player move, checks move and returns value + depth, in case of 2 situation with the same result,
+            // gets the closest in depth, gets the minimal value of all for Player move
+            bestMove = Integer.MAX_VALUE;
+            nextMove = PLAYER_MOVE;
+            comparingFunction = this::min;
+        }
+        for (int i = 0; i < table.length; i++) {
 
-                for (int j = 0; j < table[i].length; j++) {
-                    if (table[i][j] == 2) {
-                        table[i][j] = 1;
-                        bestMove = max(bestMove, minimax(table, depth + 1, !isAiMove));
-                        table[i][j] = 2;
-                    }
+            for (int j = 0; j < table[i].length; j++) {
+                if (table[i][j] == EMPTY_VALUE) {
+                    table[i][j] = nextMove;
+                    bestMove = comparingFunction.apply(bestMove, minimax(table, depth + 1, !isAiMove));
+                    table[i][j] = EMPTY_VALUE;
                 }
             }
-            return bestMove;
-        } else {        //Player move, checks move and returns value + depth, in case of 2 situation with the same result, gets the closest in depth, gets the minimal value of all for Player move
-            int bestMove = 1000;
-
-            for (int i = 0; i < table.length; i++) {
-
-                for (int j = 0; j < table[i].length; j++) {
-                    if (table[i][j] == 2) {
-                        table[i][j] = 0;
-                        bestMove = min(bestMove, minimax(table, depth + 1, !isAiMove));
-                        table[i][j] = 2;
-                    }
-                }
-            }
-            return bestMove;
         }
-    }  // Minimax Algorithm
+        return bestMove;
+    }
 
     private int max(int a, int b) {
         if (a > b) {
@@ -96,10 +109,14 @@ public class SeaFight {
     private boolean tableIsFull() {
         boolean isFull = true;
 
-        for (int i = 0; i < this.table.length; i++) {
+        for (int[] ints : this.table) {
 
-            for (int j = 0; j < this.table[i].length; j++) {
-                if (table[i][j] == 2) isFull = false;
+            for (int anInt : ints) {
+                if (anInt == 2) {
+                    isFull = false;
+                    break;
+                }
+
             }
         }
         return isFull;
@@ -119,16 +136,16 @@ public class SeaFight {
 
             for (int colum = 0; colum < this.table[red].length; colum++) {
 
-                if (this.table[red][colum] == 1) aiBroiHor++;
-                if (this.table[red][colum] == 0) playerBroiHor++;
-                if (this.table[colum][red] == 1) aiBroiVer++;
-                if (this.table[colum][red] == 0) playerBroiVer++;
+                if (this.table[red][colum] == COMPUTER_MOVE) aiBroiHor++;
+                if (this.table[red][colum] == PLAYER_MOVE) playerBroiHor++;
+                if (this.table[colum][red] == COMPUTER_MOVE) aiBroiVer++;
+                if (this.table[colum][red] == PLAYER_MOVE) playerBroiVer++;
             }
-            if (aiBroiHor == 3 || aiBroiVer == 3) {
-                return 10;
+            if (aiBroiHor == WIN_MOVE_COUNT || aiBroiVer == WIN_MOVE_COUNT) {
+                return COMPUTER_WINS;
             }
-            if (playerBroiHor == 3 || playerBroiVer == 3) {
-                return -10;
+            if (playerBroiHor == WIN_MOVE_COUNT || playerBroiVer == WIN_MOVE_COUNT) {
+                return PLAYER_WINS;
             }
             aiBroiHor = 0;
             playerBroiHor = 0;
@@ -137,26 +154,26 @@ public class SeaFight {
         }
 
         for (int diag = 0; diag < this.table.length; diag++) {
-            if (this.table[diag][diag] == 1) aiMainDiag++;
-            if (this.table[diag][diag] == 0) playerMainDiag++;
-            if (this.table[(this.table.length - 1) - diag][diag] == 1) aiSecDiag++;
-            if (this.table[(this.table.length - 1) - diag][diag] == 0) playerSecDiag++;
+            if (this.table[diag][diag] == COMPUTER_MOVE) aiMainDiag++;
+            if (this.table[diag][diag] == PLAYER_MOVE) playerMainDiag++;
+            if (this.table[(this.table.length - 1) - diag][diag] == COMPUTER_MOVE) aiSecDiag++;
+            if (this.table[(this.table.length - 1) - diag][diag] == PLAYER_MOVE) playerSecDiag++;
         }
-        if (aiMainDiag == 3 || aiSecDiag == 3) {
-            return 10;
+        if (aiMainDiag == WIN_MOVE_COUNT || aiSecDiag == WIN_MOVE_COUNT) {
+            return COMPUTER_WINS;
         }
 
-        if (playerMainDiag == 3 || playerSecDiag == 3) {
-            return -10;
+        if (playerMainDiag == WIN_MOVE_COUNT || playerSecDiag == WIN_MOVE_COUNT) {
+            return PLAYER_WINS;
         }
-        return 0;
+        return ITS_A_TIE;
     }  // Evaluation
 
     private void checkForDraw() throws GameOverException {
 
-        for (int x = 0; x < this.table.length; x++){
+        for (int x = 0; x < this.table.length; x++) {
 
-            for (int z = 0; z < this.table[0].length ; z++) {
+            for (int z = 0; z < this.table[0].length; z++) {
                 if (this.table[x][z] == 2) return;
             }
         }
@@ -182,7 +199,7 @@ public class SeaFight {
 
     public GameStatus newGame(Boolean playerFirst) {
         playerFirst = rand.nextBoolean();   //TODO implement 1st move choice button
-        this.table = new int[3][3];
+        this.table = new int[WIN_MOVE_COUNT][WIN_MOVE_COUNT];
         int aiMoveI;
         int aiMoveJ;
 
@@ -197,7 +214,7 @@ public class SeaFight {
             aiMoveJ = this.rand.nextInt(2 + 1);
             this.table[aiMoveI][aiMoveJ] = 1;
         }
-        int msg =(R.string.player_turn);
+        int msg = (R.string.player_turn);
         return new GameStatus(this.table, msg);
     }
 }

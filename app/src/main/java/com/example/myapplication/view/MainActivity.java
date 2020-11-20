@@ -1,9 +1,5 @@
 package com.example.myapplication.view;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProviders;
-
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,15 +7,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.collection.ArrayMap;
+import androidx.lifecycle.ViewModelProviders;
+
 import com.example.myapplication.R;
 import com.example.myapplication.model.GameStatus;
 import com.example.myapplication.model.Move;
 import com.example.myapplication.viewModel.MainViewModel;
-
-import org.w3c.dom.Text;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -32,7 +28,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public static final int BOTTOM_LEFT_BUTTON_ID = 6;
     public static final int BOTTOM_MIDDLE_BUTTON_ID = 7;
     public static final int BOTTOM_RIGHT_BUTTON_ID = 8;
-    private HashMap<Button, Integer> buttons;
+    private ArrayMap<Button, Integer> buttons;
     private TextView info;
     private MainViewModel viewModel;
 
@@ -42,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        buttons = new HashMap<>();
+        buttons = new ArrayMap<>();
         this.info = findViewById(R.id.textView);
         this.info.setTextSize(26);
         //TODO set text for first turn
@@ -136,7 +132,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         Button clickedButton = ((Button) v);
         Move move = findButtonCoordinates(buttons.get(clickedButton));
-        if (viewModel.getLiveData().getValue().getData()[move.getX()][move.getY()] == 2) {
+        if (viewModel.getLiveData().getValue() != null
+                && viewModel.getLiveData().getValue().getData()[move.getX()][move.getY()] == 2) {
             viewModel.userMoved(move);
         } else info.setText(R.string.invalid_move);
     }

@@ -1,14 +1,13 @@
 package com.example.myapplication.viewModel;
 
-import com.example.myapplication.R;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+
 import com.example.myapplication.model.GameStatus;
 import com.example.myapplication.model.Move;
 import com.example.myapplication.model.SeaFight;
 import com.example.myapplication.model.exception.GameOverException;
-
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 //
 
